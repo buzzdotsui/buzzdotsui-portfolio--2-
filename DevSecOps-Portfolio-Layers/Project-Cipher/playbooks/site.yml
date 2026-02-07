@@ -1,0 +1,80 @@
+---
+- name: Hardening Linux Server (CIS Benchmark Level 1)
+  hosts: all
+  become: yes
+  vars:
+    ssh_port: 2222
+    allowed_users: ["admin"]
+
+  tasks:
+    - name: Update apt cache
+      apt:
+        update_cache: yes
+        cache_valid_time: 3600
+
+    - name: Ensure UFW is installed
+      apt:
+        name: ufw
+        state: present
+
+    - name: Deny all incoming traffic by default
+      ufw:
+        direction: incoming
+        policy: deny
+
+    - name: Allow all outgoing traffic by default
+      ufw:
+        direction: outgoing
+        policy: allow
+
+    - name: Allow SSH on custom port
+      ufw:
+        rule: allow
+        port: "{{ ssh_port }}"
+        proto: tcp
+
+    - name: Enable UFW
+      ufw:
+        state: enabled
+
+    - name: Install Fail2Ban
+      apt:
+        name: fail2ban
+        state: present
+
+    - name: Configure Fail2Ban jail.local
+      copy:
+        dest: /etc/fail2ban/jail.local
+        content: |
+          [sshd]
+          enabled = true
+          port = {{ ssh_port }}
+          filter = sshd
+          logpath = /var/log/auth.log
+          maxretry = 3
+          bantime = 3600
+      notify: Restart Fail2Ban
+
+    - name: Secure SSH configuration
+      lineinfile:
+        path: /etc/ssh/sshd_config
+        regexp: "{{ item.regexp }}"
+        line: "{{ item.line }}"
+        validate: 'sshd -t -f %s'
+      loop:
+        - { regexp: '^Pass*wordAuthentication', line: 'PasswordAuthentication no' }
+        - { regexp: '^Per*mitRootLogin', line: 'PermitRootLogin no' }
+        - { regexp: '^Port', line: "Port {{ ssh_port }}" }
+        - { regexp: '^X11Forwarding', line: 'X11Forwarding no' }
+      notify: Restart SSH
+
+  handlers:
+    - name: Restart Fail2Ban
+      service:
+        name: fail2ban
+        state: restarted
+
+    - name: Restart SSH
+      service:
+        name: sshd
+        state: restarted

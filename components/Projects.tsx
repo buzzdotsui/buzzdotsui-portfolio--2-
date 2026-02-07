@@ -13,7 +13,7 @@ const projects: Project[] = [
     description: 'Automated hardening suite for Debian-based systems. Configures UFW, Fail2Ban, and SSH according to CIS benchmarks automatically.',
     tags: ['Bash', 'Security', 'Automation'],
     imageUrl: 'https://images.unsplash.com/photo-1624969862644-791f3dc98ee2',
-    githubUrl: 'https://github.com/buzzdotsui',
+    githubUrl: 'https://github.com/buzzdotsui/Project-Cipher',
     featured: true
   },
   {
@@ -22,7 +22,7 @@ const projects: Project[] = [
     description: 'Python-based surveillance tool that schedules Nmap scans, diffs results against previous baselines, and alerts on new open ports.',
     tags: ['Python', 'Nmap', 'Monitoring'],
     imageUrl: 'https://images.unsplash.com/photo-1563986768609-322da13575f3',
-    githubUrl: 'https://github.com/buzzdotsui',
+    githubUrl: 'https://github.com/buzzdotsui/Auto-Recon',
     featured: true
   },
   {
@@ -31,7 +31,7 @@ const projects: Project[] = [
     description: 'Real-time log parser for authentication logs. Detects brute-force patterns using regex and triggers IP blocks via iptables.',
     tags: ['Python', 'Regex', 'SysAdmin'],
     imageUrl: 'https://images.unsplash.com/photo-1550751827-4bd374c3f58b',
-    githubUrl: 'https://github.com/buzzdotsui',
+    githubUrl: 'https://github.com/buzzdotsui/LogSentinel',
     featured: true
   },
   {
@@ -40,6 +40,7 @@ const projects: Project[] = [
     description: 'React dashboard for visualizing server health metrics. Consumes custom JSON endpoints to display CPU, RAM, and Disk IO stats.',
     tags: ['React', 'Dashboard', 'Data Viz'],
     imageUrl: 'https://images.unsplash.com/photo-1460925895917-afdab827c52f',
+    githubUrl: 'https://github.com/buzzdotsui/Infra-UI',
     demoUrl: 'https://testytech.netlify.app/',
     featured: false
   }
