@@ -1,8 +1,10 @@
 ---
 - name: Hardening Linux Server (CIS Benchmark Level 1)
-  hosts: all
+  hosts: localhost
+  connection: local
   become: yes
   vars:
+    # Customizable variables
     ssh_port: 2222
     allowed_users: ["admin"]
 
@@ -11,33 +13,39 @@
       apt:
         update_cache: yes
         cache_valid_time: 3600
+      register: apt_update
+      retries: 3
+      delay: 5
+      ignore_errors: yes
 
-    - name: Ensure UFW is installed
+    - name: Ensure UFW firewall is installed
       apt:
         name: ufw
         state: present
 
-    - name: Deny all incoming traffic by default
+    - name: Configure UFW defaults (Deny Incoming)
       ufw:
         direction: incoming
         policy: deny
+        log: yes
 
-    - name: Allow all outgoing traffic by default
+    - name: Configure UFW defaults (Allow Outgoing)
       ufw:
         direction: outgoing
         policy: allow
 
-    - name: Allow SSH on custom port
+    - name: Allow SSH on custom port {{ ssh_port }}
       ufw:
         rule: allow
         port: "{{ ssh_port }}"
         proto: tcp
+        comment: "Management SSH port"
 
     - name: Enable UFW
       ufw:
         state: enabled
 
-    - name: Install Fail2Ban
+    - name: Install Fail2Ban for intrusion prevention
       apt:
         name: fail2ban
         state: present
@@ -45,6 +53,7 @@
     - name: Configure Fail2Ban jail.local
       copy:
         dest: /etc/fail2ban/jail.local
+        mode: "0644"
         content: |
           [sshd]
           enabled = true
@@ -53,19 +62,31 @@
           logpath = /var/log/auth.log
           maxretry = 3
           bantime = 3600
+          findtime = 600
       notify: Restart Fail2Ban
 
-    - name: Secure SSH configuration
+    - name: Secure SSH configuration (CIS 5.2)
       lineinfile:
         path: /etc/ssh/sshd_config
         regexp: "{{ item.regexp }}"
         line: "{{ item.line }}"
-        validate: 'sshd -t -f %s'
+        state: present
+        validate: "sshd -t -f %s"
+        backup: yes
       loop:
-        - { regexp: '^Pass*wordAuthentication', line: 'PasswordAuthentication no' }
-        - { regexp: '^Per*mitRootLogin', line: 'PermitRootLogin no' }
-        - { regexp: '^Port', line: "Port {{ ssh_port }}" }
-        - { regexp: '^X11Forwarding', line: 'X11Forwarding no' }
+        # Disable Password Auth
+        - {
+            regexp: "^#?PasswordAuthentication",
+            line: "PasswordAuthentication no",
+          }
+        # Disable Root Login
+        - { regexp: "^#?PermitRootLogin", line: "PermitRootLogin no" }
+        # Change Port
+        - { regexp: "^#?Port", line: "Port {{ ssh_port }}" }
+        # Disable X11 Forwarding
+        - { regexp: "^#?X11Forwarding", line: "X11Forwarding no" }
+        # Max Auth Tries (CIS 5.2.5)
+        - { regexp: "^#?MaxAuthTries", line: "MaxAuthTries 4" }
       notify: Restart SSH
 
   handlers:
